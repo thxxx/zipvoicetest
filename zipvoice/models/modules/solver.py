@@ -16,7 +16,6 @@
 # limitations under the License.
 
 from typing import Optional, Union
-
 import torch
 
 
@@ -225,6 +224,8 @@ class EulerSolver:
             t_shift=t_shift,
             device=device,
         )
+    
+        # self.model = torch.compile(self.model, mode="reduce-overhead", fullgraph=False)
 
         for step in range(num_step):
             v = self.model(

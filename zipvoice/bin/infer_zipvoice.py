@@ -303,6 +303,8 @@ def generate_sentence(
             factor metrics for processing.
     """
     # Convert text to tokens
+    st = time.time()
+
     tokens = tokenizer.texts_to_token_ids([text])
     prompt_tokens = tokenizer.texts_to_token_ids([prompt_text])
 
@@ -327,8 +329,10 @@ def generate_sentence(
     prompt_features = prompt_features.unsqueeze(0) * feat_scale
     prompt_features_lens = torch.tensor([prompt_features.size(1)], device=device)
 
+    set_time = time.time() - st
+
     # Start timing
-    start_t = dt.datetime.now()
+    start_t = dt.datetime.now() # 약 5%
 
     # Generate features
     (
@@ -371,6 +375,7 @@ def generate_sentence(
         "rtf": rtf,
         "rtf_no_vocoder": rtf_no_vocoder,
         "rtf_vocoder": rtf_vocoder,
+        "set_time": set_time
     }
 
     # Adjust wav volume if necessary
@@ -585,7 +590,7 @@ def main():
         )
     else:
         st = time.time()
-        generate_sentence(
+        metrics = generate_sentence(
             save_path=params.res_wav_path,
             prompt_text=params.prompt_text,
             prompt_wav=params.prompt_wav,
@@ -604,6 +609,7 @@ def main():
             sampling_rate=params.sampling_rate,
         )
         print("time : ", time.time() - st)
+        print("\n\n", metrics, "\n\n")
     logging.info("Done")
 
 

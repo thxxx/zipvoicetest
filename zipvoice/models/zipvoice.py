@@ -16,7 +16,7 @@
 # limitations under the License.
 
 from typing import List, Optional
-
+import time
 import torch
 import torch.nn as nn
 from torch.nn.parallel import DistributedDataParallel as DDP
@@ -415,6 +415,7 @@ class ZipVoice(nn.Module):
             num_step: the number of steps to use in the ODE solver.
             guidance_scale: the guidance scale for classifier-free guidance.
         """
+        start = time.time()
 
         assert duration in ["real", "predict"]
 
@@ -436,6 +437,7 @@ class ZipVoice(nn.Module):
                 prompt_tokens=prompt_tokens,
                 prompt_features_lens=prompt_features_lens,
             )
+        print(f"\n\nDuration prediction : {time.time() - start}\n\n")
         batch_size, num_frames, _ = text_condition.shape
 
         speech_condition = torch.nn.functional.pad(
@@ -449,6 +451,7 @@ class ZipVoice(nn.Module):
             torch.zeros_like(speech_condition),
             speech_condition,
         )
+        # speech_condition = speech_condition.masked_fill(speech_condition_mask.unsqueeze(-1), 0.0)
 
         x0 = torch.randn(
             batch_size,
@@ -457,6 +460,7 @@ class ZipVoice(nn.Module):
             device=text_condition.device,
         )
 
+        before_solver = time.time()
         x1 = self.solver.sample(
             x=x0,
             text_condition=text_condition,
@@ -466,6 +470,8 @@ class ZipVoice(nn.Module):
             guidance_scale=guidance_scale,
             t_shift=t_shift,
         )
+        print(f"\n\nOnly solver : {time.time() - before_solver}\n\n")
+
         x1_wo_prompt_lens = (~padding_mask).sum(-1) - prompt_features_lens
         x1_prompt = torch.zeros(
             x1.size(0), prompt_features_lens.max(), x1.size(2), device=x1.device
@@ -483,6 +489,7 @@ class ZipVoice(nn.Module):
                 i, : prompt_features_lens[i]
             ]
 
+        print(f"\n\nTotal : {time.time() - start}\n\n")
         return x1_wo_prompt, x1_wo_prompt_lens, x1_prompt, prompt_features_lens
 
     def sample_intermediate(

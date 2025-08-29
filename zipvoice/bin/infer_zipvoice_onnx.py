@@ -682,7 +682,7 @@ def main():
             sampling_rate=params.sampling_rate,
         )
     else:
-        generate_sentence(
+        metrics = generate_sentence(
             save_path=params.res_wav_path,
             prompt_text=params.prompt_text,
             prompt_wav=params.prompt_wav,
@@ -699,6 +699,7 @@ def main():
             feat_scale=params.feat_scale,
             sampling_rate=params.sampling_rate,
         )
+        print("\n\n", metrics, "\n\n")
     logging.info("Done")
 
 
